@@ -1,0 +1,19 @@
+# Credentials and Key Pairs
+*.pem
+instance-info.txt
+
+# Python artifacts
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+ENV/
+env/
+
+# IDE and OS files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+*.log
