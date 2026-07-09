@@ -267,3 +267,35 @@ If your AWS account does not have a default VPC, you must manually create the ne
 2. **Delete Security Group**: Delete `project2-web-server-sg`.
 3. **Delete Key Pair**: Delete `project2-key`.
 4. **Delete IAM Role**: Delete `Project2-EC2-Role`.
+
+---
+
+## Phase 2: Automation with User Data
+
+In this phase, we replace the manual SSH-based setup from Phase 1 with an automated bootstrap script. AWS EC2 allows passing a `user-data.sh` script that runs as `root` during the first boot cycle.
+
+### Step 1: Create the User Data Script
+We created a `user-data.sh` bash script that automates:
+1. Updating the OS packages.
+2. Installing Python 3, Nginx, Git, and security tools (fail2ban).
+3. Cloning the repository and setting up the Python virtual environment.
+4. Installing dependencies (including `gunicorn`).
+5. Creating and enabling the systemd service.
+6. Configuring Nginx as a reverse proxy.
+
+### Step 2: Launch Instance with User Data
+1. Launch an EC2 instance exactly as done in Phase 1 (same VPC, Security Group, IAM Role, Key Pair).
+2. Under **Advanced Details**, scroll down to the **User data** field.
+3. Paste the contents of `user-data.sh` into the text box (or select the file).
+4. Launch the instance.
+
+### Step 3: Verification
+1. Wait a few minutes for the instance to boot and execute the script.
+2. Navigate to `http://<PUBLIC_IP>` in your browser. The Flask dashboard will appear automatically without a single SSH command!
+3. *(Optional)* If troubleshooting is needed, SSH into the instance and check the logs:
+   \`\`\`bash
+   cat /var/log/user-data.log
+   \`\`\`
+
+### Step 4: Cleanup
+Terminate the instance and delete the resources from the AWS Console to prevent charges.
