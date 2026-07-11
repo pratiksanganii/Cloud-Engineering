@@ -299,3 +299,43 @@ We created a `user-data.sh` bash script that automates:
 
 ### Step 4: Cleanup
 Terminate the instance and delete the resources from the AWS Console to prevent charges.
+
+---
+
+## Phase 3: AWS CLI Automation
+
+In this phase, we move completely away from the AWS Console and automate the infrastructure lifecycle using the AWS Command Line Interface (CLI) and bash scripts. 
+
+### Prerequisites: AWS CLI Configuration
+To run these scripts locally, your machine must be authenticated with AWS:
+1. Install the [AWS CLI v2](https://awscli.amazonaws.com/AWSCLIV2.msi).
+2. Create a dedicated IAM User (e.g., `cli-deployer`) with **Programmatic Access only** (no console password) and Administrator or EC2/VPC full access.
+3. Open your terminal (Git Bash recommended on Windows) and run `aws configure`.
+4. Enter the Access Key, Secret Key, default region (e.g., `us-east-1` or `ap-south-1`), and default output format (`json`).
+5. Verify authentication by running: `aws sts get-caller-identity`.
+
+### Step 1: The Deployment Script (`deploy.sh`)
+We created an idempotent deployment script that handles:
+- Locating our existing custom VPC and Subnet.
+- Creating the Security Group (`project2-web-server-sg`) and dynamically allowing SSH strictly from our current public IP.
+- Generating a new RSA Key Pair (`project2-key.pem`).
+- Launching the EC2 instance and passing `user-data.sh` using the `fileb://` prefix to ensure cross-platform encoding compatibility.
+
+Run the deployment:
+\`\`\`bash
+chmod +x deploy.sh
+./deploy.sh
+\`\`\`
+
+### Step 2: The Cleanup Script (`cleanup.sh`)
+To prevent AWS charges, we created a teardown script that cleanly destroys the resources created by the deployment script in the correct dependency order.
+1. Terminates the EC2 instance.
+2. Waits for the instance to fully terminate.
+3. Deletes the Security Group and Key Pair.
+*(Note: The VPC and Subnet are left intact for future projects).*
+
+Run the cleanup:
+\`\`\`bash
+chmod +x cleanup.sh
+./cleanup.sh
+\`\`\`
