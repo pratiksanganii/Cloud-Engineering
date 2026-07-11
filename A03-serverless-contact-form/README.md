@@ -49,7 +49,7 @@ An IAM Role requires two distinct policies: a **Trust Policy** (who can assume t
 ### Step 3: Create the Lambda Function
 1. Go to **Lambda → Create function**.
 2. **Function name:** `ContactFormHandler`
-3. **Runtime:** Node.js 20.x
+3. **Runtime:** Node.js 24.x
 4. Under **Permissions**, chose **Use an existing role** and selected `ContactFormLambdaRole`.
 5. Created the function and pasted the local `lambda/index.js` code into the inline editor.
 6. Under **Configuration → Environment variables**, added:
