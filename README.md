@@ -22,6 +22,13 @@ This repository documents my journey from manual cloud configuration to fully au
 * Automated server bootstrap using `user-data.sh`.
 * Fully automated the infrastructure lifecycle using AWS CLI deployment (`deploy.sh`) and cleanup (`cleanup.sh`) scripts.
 
+### [Project 3: Serverless Contact Form (API Gateway + Lambda + SES)](./A03-serverless-contact-form/README.md)
+**Tech Stack:** AWS (API Gateway, Lambda, SES, IAM), Node.js (ES Modules), Bash.
+* Designed a fully serverless, event-driven backend to process contact form submissions.
+* Engineered a secure Lambda function (Node 24.x) utilizing AWS SDK v3, HTML sanitization against XSS, and regex validation.
+* Implemented strict IAM Principle of Least Privilege resource policies to restrict API Gateway invocations and SES capabilities.
+* Authored idempotent bash automation scripts (`deploy.sh` & `cleanup.sh`) utilizing a centralized `config.sh` to prevent configuration drift.
+
 ---
 
 ## 🧠 Core Philosophy
