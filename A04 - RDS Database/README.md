@@ -67,7 +67,7 @@ Your application requires a managed relational database that is highly available
 
 1. Go to **VPC → Your VPCs → Create VPC**
 2. Configure:
-  - **Name tag:** `RDS-VPC`
+  - **Name tag:** `A04-RDS-VPC`
   - **IPv4 CIDR block:** `10.0.0.0/16`
 3. Click **Create VPC**
 4. Select the new VPC → **Actions → Edit VPC settings** → enable **DNS hostnames** → **Save**
@@ -85,14 +85,14 @@ Go to **VPC → Subnets → Create subnet**, select `RDS-VPC`, and add three sub
 
 | Name             | Availability Zone | CIDR Block     | Purpose                |
 | ---------------- | ----------------- | -------------- | ---------------------- |
-| `rds-private-1a` | us-east-1a        | `10.0.1.0/24`  | RDS primary            |
-| `rds-private-1b` | us-east-1b        | `10.0.2.0/24`  | RDS standby (Multi-AZ) |
-| `bastion-public` | us-east-1a        | `10.0.10.0/24` | Bastion host           |
+| `A04-rds-private-1a` | ap-south-1a        | `10.0.1.0/24`  | RDS primary            |
+| `A04-rds-private-1b` | ap-south-1b        | `10.0.2.0/24`  | RDS standby (Multi-AZ) |
+| `A04-bastion-public` | ap-south-1a        | `10.0.10.0/24` | Bastion host           |
 
 
 After creating all three:
 
-1. Select `bastion-public` → **Actions → Edit subnet settings**
+1. Select `A04-bastion-public` → **Actions → Edit subnet settings**
 2. Enable **Auto-assign public IPv4 address** → **Save**
 
 > **Why two private subnets in different AZs?** RDS Multi-AZ requires at least two subnets in separate Availability Zones. If the primary AZ fails, RDS automatically fails over to the standby in the other AZ.
@@ -108,21 +108,21 @@ After creating all three:
 ### Internet Gateway
 
 1. Go to **VPC → Internet Gateways → Create internet gateway**
-2. **Name tag:** `RDS-VPC-IGW` → click **Create**
-3. Select the new IGW → **Actions → Attach to VPC** → choose `RDS-VPC` → **Attach**
+2. **Name tag:** `A04-RDS-VPC-IGW` → click **Create**
+3. Select the new IGW → **Actions → Attach to VPC** → choose `A04-RDS-VPC` → **Attach**
 
 
 
 ### Route Table
 
 1. Go to **VPC → Route Tables → Create route table**
-2. **Name:** `public-rt` | **VPC:** `RDS-VPC` → click **Create**
-3. Select `public-rt` → **Routes** tab → **Edit routes** → **Add route**:
+2. **Name:** `A04-public-rt` | **VPC:** `A04-RDS-VPC` → click **Create**
+3. Select `A04-public-rt` → **Routes** tab → **Edit routes** → **Add route**:
   - **Destination:** `0.0.0.0/0`
-  - **Target:** select the internet gateway (`RDS-VPC-IGW`)
+  - **Target:** select the internet gateway (`A04-RDS-VPC-IGW`)
   - Click **Save changes**
-4. Select `public-rt` → **Subnet associations** tab → **Edit subnet associations**
-  - Check `bastion-public` → **Save associations**
+4. Select `A04-public-rt` → **Subnet associations** tab → **Edit subnet associations**
+  - Check `A04-bastion-public` → **Save associations**
 
 > **Why no route table for the private subnets?** The private subnets use the VPC's default (main) route table, which has no internet route. This keeps the RDS instance completely off the public internet.
 
@@ -138,9 +138,9 @@ After creating all three:
 
 1. Go to **EC2 → Security Groups → Create security group**
 2. Configure:
-  - **Name:** `bastion-sg`
+  - **Name:** `A04-bastion-sg`
   - **Description:** `Allow SSH from my IP`
-  - **VPC:** `RDS-VPC`
+  - **VPC:** `A04-RDS-VPC`
 3. **Inbound rules → Add rule:**
   - **Type:** SSH | **Port:** 22 | **Source:** My IP
 4. Click **Create security group**
@@ -151,11 +151,11 @@ After creating all three:
 
 1. Click **Create security group** again
 2. Configure:
-  - **Name:** `rds-sg`
+  - **Name:** `A04-rds-sg`
   - **Description:** `Allow PostgreSQL from bastion only`
-  - **VPC:** `RDS-VPC`
+  - **VPC:** `A04-RDS-VPC`
 3. **Inbound rules → Add rule:**
-  - **Type:** PostgreSQL | **Port:** 5432 | **Source:** select `bastion-sg` (type the name to search)
+  - **Type:** PostgreSQL | **Port:** 5432 | **Source:** Custom, select `A04-bastion-sg` (type the name to search)
 4. Click **Create security group**
 
 > **Why reference the bastion SG instead of an IP?** Security group references are dynamic. Any instance attached to `bastion-sg` can reach the database — no need to update IPs if the bastion is replaced.
@@ -168,12 +168,12 @@ After creating all three:
 
 1. Go to **RDS → Subnet groups → Create DB subnet group**
 2. Configure:
-  - **Name:** `rds-subnet-group`
+  - **Name:** `A04-rds-subnet-group`
   - **Description:** `Subnet group for RDS`
-  - **VPC:** `RDS-VPC`
+  - **VPC:** `A04-RDS-VPC`
 3. **Add subnets:**
-  - **Availability Zones:** select `us-east-1a` and `us-east-1b`
-  - **Subnets:** select `rds-private-1a` and `rds-private-1b`
+  - **Availability Zones:** select `ap-south-1a` and `ap-south-1b`
+  - **Subnets:** select `A04-rds-private-1a` and `A04-rds-private-1b`
 4. Click **Create**
 
 > **What is a DB Subnet Group?** It tells RDS which subnets (and therefore which AZs) the database can be placed in. Multi-AZ deployments will use one subnet for the primary and another for the standby.
@@ -185,36 +185,67 @@ After creating all three:
 ## Step 6 — Create RDS PostgreSQL Instance
 
 1. Go to **RDS → Databases → Create database**
-2. **Creation method:** Standard create
+2. **Choose a database creation method:** Full configuration
+   - *Express configuration* is simpler but gives you less control. Full configuration lets you choose VPC, subnet group, security groups, Multi-AZ, backups, and more.
 3. **Engine options:**
-  - **Engine type:** PostgreSQL
-  - **Engine version:** 15.x (latest minor version)
-4. **Templates:** Free tier *(or Production if you want Multi-AZ)*
-5. **Settings:**
-  - **DB instance identifier:** `my-postgres-db`
-  - **Master username:** `dbadmin`
-  - **Master password:** set a strong password and save it somewhere safe
-6. **Instance configuration:**
-  - **DB instance class:** `db.t3.micro`
-7. **Storage:**
-  - **Storage type:** gp3
-  - **Allocated storage:** 20 GiB
-  - Enable **Storage encryption**
-8. **Connectivity:**
-  - **VPC:** `RDS-VPC`
-  - **DB subnet group:** `rds-subnet-group`
-  - **Public access:** **No**
-  - **VPC security group:** choose existing → select `rds-sg` (remove the default SG)
-9. **Additional configuration:**
-  - **Backup retention period:** 7 days
-  - **Backup window:** select a preferred window (e.g., 03:00–04:00 UTC)
-  - **Maintenance window:** select a preferred window (e.g., Mon 04:00–05:00 UTC)
-  - Enable **Auto minor version upgrade**
-10. Click **Create database**
+   - **Engine type:** PostgreSQL
+   - **Engine version:** 18.x (latest minor version)
 
-> ⏳ This takes **10–15 minutes**. Wait until the status shows **Available**.
+### Choosing a Template: Free Tier vs Dev/Test
 
-> **Free tier note:** The free tier template disables Multi-AZ. If you want to practice Multi-AZ, choose the Production template instead — but be aware this doubles the cost.
+You'll see three templates: **Production**, **Dev/Test**, and **Free tier**.
+
+| Template | Multi-AZ | Cost |
+|---|---|---|
+| **Free tier** | ❌ Disabled (greyed out) | Free for 12 months (750 hrs/month of `db.t3.micro`) |
+| **Dev/Test** | ✅ Available | ~$0.036/hr for the DB instance |
+| **Production** | ✅ Enabled by default | Same pricing as Dev/Test, just stricter defaults |
+
+> **💡 Want to practice Multi-AZ?** Select **Dev/Test**. The Free tier template disables Multi-AZ entirely — you can't even toggle it on. Since we've already created two private subnets across two AZs specifically for Multi-AZ, it's worth selecting Dev/Test to see the full architecture in action. The cost for a few hours of practice is minimal (see estimate below).
+
+4. **Templates:** Select **Dev/Test**
+5. **Availability and durability:**
+   - Select **Multi-AZ DB instance** (creates a standby instance in a second AZ for automatic failover)
+6. **Settings:**
+   - **DB instance identifier:** `my-postgres-db`
+   - **Master username:** `dbadmin`
+   - **Master password:** set a strong password and save it somewhere safe
+7. **Instance configuration:**
+   - **DB instance class:** `db.t3.micro`
+8. **Storage:**
+   - **Storage type:** gp3
+   - **Allocated storage:** 20 GiB
+   - Enable **Storage encryption**
+9. **Connectivity:**
+   - **VPC:** `A04-RDS-VPC`
+   - **DB subnet group:** `A04-rds-subnet-group`
+   - **Public access:** **No**
+   - **VPC security group:** choose existing → select `A04-rds-sg` (remove the default SG)
+
+> **Note:** You won't see an option to choose which subnet is primary and which is standby. That's by design — AWS automatically decides the AZ placement. You provide the subnet group, and RDS handles the rest. After creation, you can check which AZ was chosen under **Connectivity & security**.
+
+10. **Additional configuration:**
+    - **Backup retention period:** 7 days
+    - **Backup window:** select a preferred window (e.g., 03:00–04:00 UTC)
+    - **Maintenance window:** select a preferred window (e.g., Mon 04:00–05:00 UTC)
+    - Enable **Auto minor version upgrade**
+
+### Cost Estimate
+
+The console will show an estimated monthly cost of around **~$43/month**. Don't worry — that's if you run it 24/7 for a full month. Your actual cost for practice:
+
+| Duration | Estimated Cost |
+|---|---|
+| 1 hour | ~$0.06 |
+| 2 hours | ~$0.12 |
+| 5 hours | ~$0.30 |
+| Full month | ~$43.20 |
+
+> **⚠️ Remember to clean up when you're done practicing!** Follow the cleanup steps at the end of this guide to delete all resources and stop charges.
+
+11. Click **Create database**
+
+> ⏳ This takes **10–15 minutes**. Wait until the status shows **Available**. While it's provisioning, you can move on to **Step 7** and set up the bastion host in parallel.
 
 ---
 
