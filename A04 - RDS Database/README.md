@@ -217,6 +217,7 @@ You'll see three templates: **Production**, **Dev/Test**, and **Free tier**.
    - **Allocated storage:** 20 GiB
    - Enable **Storage encryption**
 9. **Connectivity:**
+   - **Compute resource:**: Don’t connect to an EC2 compute resource (we will set this up in next Step)
    - **VPC:** `A04-RDS-VPC`
    - **DB subnet group:** `A04-rds-subnet-group`
    - **Public access:** **No**
@@ -258,24 +259,24 @@ The console will show an estimated monthly cost of around **~$43/month**. Don't 
 ### Create Key Pair
 
 1. Go to **EC2 → Key Pairs → Create key pair**
-2. **Name:** `bastion-key` | **Type:** RSA | **Format:** .pem
+2. **Name:** `A04-bastion-key` | **Type:** RSA | **Format:** .pem
 3. The `.pem` file downloads automatically — save it securely
 
 
 
 ### Launch Instance
 
-1. Go to **EC2 → Launch instances**
+1. Go to **EC2 → Instances → Launch instances**
 2. Configure:
-  - **Name:** `Bastion-Host`
+  - **Name:** `A04-Bastion-Host`
   - **AMI:** Amazon Linux 2023
-  - **Instance type:** `t2.micro`
-  - **Key pair:** `bastion-key`
+  - **Instance type:** `t2.micro` (go with `t3.micro` if `t2.micro` is not available for the selected AMI) 
+  - **Key pair:** `A04-bastion-key`
 3. **Network settings → Edit:**
-  - **VPC:** `RDS-VPC`
-  - **Subnet:** `bastion-public`
+  - **VPC:** `A04-RDS-VPC`
+  - **Subnet:** `A04-bastion-public`
   - **Auto-assign public IP:** Enable
-  - **Select existing security group:** `bastion-sg`
+  - **Select existing security group:** `A04-bastion-sg`
 4. Click **Launch instance**
 5. Wait until the instance is **Running**, then copy its **Public IPv4 address**
 
@@ -305,7 +306,8 @@ On the bastion host:
 
 ```bash
 sudo yum install postgresql15 -y
-psql -h <RDS_ENDPOINT> -U dbadmin -d postgres
+psql -h <RDS_ENDPOINT> -U dbadmin -d postgres 
+# example RDS_ENDPOINT: `my-postgres-db.xxxx442r5x.ap-south-1.rds.amazonaws.com`
 ```
 
 > Find the RDS endpoint at **RDS → Databases → my-postgres-db → Connectivity & security → Endpoint**.
