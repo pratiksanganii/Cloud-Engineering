@@ -1,6 +1,7 @@
 # Credentials and Key Pairs
 *.pem
 instance-info.txt
+deployment-info.txt
 
 # Python artifacts
 __pycache__/

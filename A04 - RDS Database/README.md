@@ -16,7 +16,7 @@ Your application requires a managed relational database that is highly available
 │  │                       │   │  10.0.2.0/24 (1b)          │  │
 │  │  ┌─────────────────┐ │   │                            │  │
 │  │  │  Bastion Host    │ │   │  ┌──────────────────────┐  │  │
-│  │  │  (t2.micro)      │─┼───┼─▶│  RDS PostgreSQL      │  │  │
+│  │  │  (t3.micro)      │─┼───┼─▶│  RDS PostgreSQL      │  │  │
 │  │  │  SSH (port 22)   │ │   │  │  (db.t3.micro)       │  │  │
 │  │  └─────────────────┘ │   │  │  Multi-AZ             │  │  │
 │  │         ▲             │   │  │  Encrypted            │  │  │
@@ -54,9 +54,20 @@ Your application requires a managed relational database that is highly available
 
 
 
+## Project Structure
+
+```
+A04 - RDS Database/
+├── deploy-rds.sh    # Automated deployment script
+├── cleanup-rds.sh   # Automated cleanup script
+└── README.md        # This file — manual + automated guide
+```
+
 ## Prerequisites
 
 - AWS account with RDS, EC2, VPC, and CloudWatch permissions
+- AWS CLI installed and configured (for automated deployment)
+- A Bash shell — Linux/macOS or WSL on Windows (for running scripts)
 - PostgreSQL client tools (optional, for testing from the bastion)
 
 ---
@@ -305,7 +316,7 @@ ssh -i bastion-key.pem ec2-user@<BASTION_PUBLIC_IP>
 On the bastion host:
 
 ```bash
-sudo yum install postgresql15 -y
+sudo yum install postgresql18 -y
 psql -h <RDS_ENDPOINT> -U dbadmin -d postgres 
 # example RDS_ENDPOINT: `my-postgres-db.xxxx442r5x.ap-south-1.rds.amazonaws.com`
 ```
@@ -398,6 +409,57 @@ Delete resources in this order:
 
 
 
+## CLI / Automation
+
+After understanding all resources manually, use the provided scripts to deploy and tear down the entire infrastructure automatically.
+
+### deploy-rds.sh
+
+```bash
+# Pass the password as an environment variable — never hardcode it in the script
+chmod +x deploy-rds.sh
+DB_PASSWORD="YourSecurePassword" ./deploy-rds.sh
+```
+
+The deploy script creates all resources in order:
+
+1. **VPC** with DNS hostnames enabled
+2. **3 Subnets** — two private (`ap-south-1a`, `ap-south-1b`) and one public (`ap-south-1a`)
+3. **Internet Gateway** attached to the VPC with a public route table
+4. **Security Groups** — bastion (SSH from your IP) and RDS (PostgreSQL from bastion SG)
+5. **DB Subnet Group** spanning both private subnets
+6. **DB Parameter Group** with custom PostgreSQL settings (`max_connections=200`, `shared_buffers=262144`)
+7. **RDS PostgreSQL 18 Instance** — `db.t3.micro`, Multi-AZ, encrypted, 7-day backups
+8. **Key Pair** and **Bastion Host** (`t3.micro`) in the public subnet
+9. **CloudWatch Alarms** — CPU utilization (>80%) and free storage (<2 GB)
+
+All deployment details (endpoint, bastion IP, SSH command) are saved to `deployment-info.txt`.
+
+### cleanup-rds.sh
+
+```bash
+chmod +x cleanup-rds.sh
+./cleanup-rds.sh
+```
+
+The cleanup script deletes all resources in the correct dependency order:
+
+1. Deletes the RDS instance (skips final snapshot) and **waits for full deletion**
+2. Terminates the bastion host and waits for termination
+3. Deletes the DB subnet group and parameter group
+4. Deletes CloudWatch alarms
+5. Deletes both security groups
+6. Removes all VPC resources (IGW, subnets, route table, VPC)
+7. Deletes the key pair and local `.pem` file
+
+> Each step uses `|| true` so the script continues even if a resource was already deleted or doesn't exist.
+
+> **⚠️ Always run the cleanup script after finishing to avoid ongoing RDS and data transfer charges.**
+
+---
+
+
+
 ## Learning Objectives
 
 After completing this project, you will understand:
@@ -409,6 +471,7 @@ After completing this project, you will understand:
 - Creating and using bastion hosts for database administration
 - Monitoring database performance with CloudWatch metrics and alarms
 - Applying encryption at rest and in transit
+- Automating infrastructure deployment and cleanup with shell scripts
 
 ---
 
