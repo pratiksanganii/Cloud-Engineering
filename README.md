@@ -35,7 +35,13 @@ This repository documents my journey from manual cloud configuration to fully au
 * Architected defense-in-depth networking: private subnets with no internet route, security group chaining (SG-to-SG references), and a bastion host for secure database access.
 * Configured automated backups (7-day retention), storage encryption at rest, and custom DB parameter groups for performance tuning.
 * Set up CloudWatch alarms for CPU utilization and storage monitoring.
-* Automated full infrastructure lifecycle with `deploy-rds.sh` and `cleanup-rds.sh` scripts with dependency-aware cleanup ordering.
+
+### [Project 5: CI/CD Pipeline with GitHub Actions](./A05-cicd-pipeline/README.md)
+**Tech Stack:** GitHub Actions, AWS (IAM OIDC, S3), Node.js, Express, Jest, ESLint, Bash.
+* Built automated CI/CD pipelines using GitHub Actions for continuous integration (ESLint + Jest) and deployment to S3.
+* Implemented keyless AWS authentication using IAM OpenID Connect (OIDC) identity federation scoped to the GitHub repository.
+* Solved real-world OIDC edge cases including user/repository numeric ID claim matching and workflow dependencies (`needs: build-and-test`).
+* Authored idempotent bash automation scripts (`setup-project.sh`, `configure-aws.sh` & `cleanup-aws.sh`) backed by a centralized `config.sh`.
 
 ---
 
