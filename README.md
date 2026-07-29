@@ -29,6 +29,14 @@ This repository documents my journey from manual cloud configuration to fully au
 * Implemented strict IAM Principle of Least Privilege resource policies to restrict API Gateway invocations and SES capabilities.
 * Authored idempotent bash automation scripts (`deploy.sh` & `cleanup.sh`) utilizing a centralized `config.sh` to prevent configuration drift.
 
+### [Project 4: RDS Database with Automated Backups](./A04%20-%20RDS%20Database/README.md)
+**Tech Stack:** AWS (RDS PostgreSQL, EC2, VPC, CloudWatch), Bash.
+* Deployed a managed PostgreSQL database with Multi-AZ redundancy for automatic failover across Availability Zones.
+* Architected defense-in-depth networking: private subnets with no internet route, security group chaining (SG-to-SG references), and a bastion host for secure database access.
+* Configured automated backups (7-day retention), storage encryption at rest, and custom DB parameter groups for performance tuning.
+* Set up CloudWatch alarms for CPU utilization and storage monitoring.
+* Automated full infrastructure lifecycle with `deploy-rds.sh` and `cleanup-rds.sh` scripts with dependency-aware cleanup ordering.
+
 ---
 
 ## 🧠 Core Philosophy
