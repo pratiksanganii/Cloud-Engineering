@@ -43,6 +43,13 @@ This repository documents my journey from manual cloud configuration to fully au
 * Solved real-world OIDC edge cases including user/repository numeric ID claim matching and workflow dependencies (`needs: build-and-test`).
 * Authored idempotent bash automation scripts (`setup-project.sh`, `configure-aws.sh` & `cleanup-aws.sh`) backed by a centralized `config.sh`.
 
+### [Project 6: Infrastructure as Code with Terraform](./A06-terraform-iac/README.md)
+**Tech Stack:** Terraform (HCL), AWS (VPC, EC2, RDS PostgreSQL, S3, DynamoDB), Bash.
+* Replaced manual console provisioning with fully declarative IaC using Terraform modules for VPC, EC2, and RDS.
+* Implemented remote state management with S3 (versioning + SSE-S3 encryption) and state locking via DynamoDB.
+* Architected a modular, reusable Terraform structure — child modules for networking, compute, and database layers with clean input/output contracts.
+* Used `terraform plan` as a safe preview gate and environment variables for secrets management, eliminating hardcoded credentials.
+
 ---
 
 ## 🧠 Core Philosophy
